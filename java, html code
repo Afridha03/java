@@ -1,0 +1,238 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.FileOutputStream;
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+
+public class ResumeBuilder {
+    private static String name, email, phone, address, summary, education, skills, experience, certifications, languages, linkedin, photoPath;
+
+    public static void main(String[] args) {
+        collectUserData();
+    }
+
+    private static void collectUserData() {
+        JFrame frame = new JFrame("Professional Resume Builder");
+        frame.setSize(600, 800);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLayout(new BorderLayout());
+
+        JPanel inputPanel = new JPanel(new GridLayout(12, 2, 10, 10));
+        inputPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JLabel labelName = new JLabel("Full Name:");
+        JTextField fieldName = new JTextField();
+        JLabel labelEmail = new JLabel("Email:");
+        JTextField fieldEmail = new JTextField();
+        JLabel labelPhone = new JLabel("Phone:");
+        JTextField fieldPhone = new JTextField();
+        JLabel labelAddress = new JLabel("Address:");
+        JTextField fieldAddress = new JTextField();
+        JLabel labelLinkedIn = new JLabel("LinkedIn ID:");
+        JTextField fieldLinkedIn = new JTextField();
+        JLabel labelSummary = new JLabel("Professional Summary:");
+        JTextArea fieldSummary = new JTextArea(2, 20);
+        JLabel labelEducation = new JLabel("Education:");
+        JTextArea fieldEducation = new JTextArea(2, 20);
+        JLabel labelSkills = new JLabel("Skills:");
+        JTextArea fieldSkills = new JTextArea(2, 20);
+        JLabel labelLanguages = new JLabel("Languages:");
+        JTextArea fieldLanguages = new JTextArea(2, 20);
+        JLabel labelExperience = new JLabel("Work Experience:");
+        JTextArea fieldExperience = new JTextArea(2, 20);
+        JLabel labelPhoto = new JLabel("Upload Photo:");
+        JButton photoButton = new JButton("Choose Photo");
+
+        photoButton.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            int returnValue = fileChooser.showOpenDialog(null);
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+                photoPath = fileChooser.getSelectedFile().getAbsolutePath();
+                JOptionPane.showMessageDialog(frame, "Photo uploaded successfully!");
+            }
+        });
+
+        JButton nextButton = new JButton("Next");
+
+        inputPanel.add(labelName);
+        inputPanel.add(fieldName);
+        inputPanel.add(labelEmail);
+        inputPanel.add(fieldEmail);
+        inputPanel.add(labelPhone);
+        inputPanel.add(fieldPhone);
+        inputPanel.add(labelAddress);
+        inputPanel.add(fieldAddress);
+        inputPanel.add(labelLinkedIn);
+        inputPanel.add(fieldLinkedIn);
+        inputPanel.add(labelSummary);
+        inputPanel.add(new JScrollPane(fieldSummary));
+        inputPanel.add(labelEducation);
+        inputPanel.add(new JScrollPane(fieldEducation));
+        inputPanel.add(labelSkills);
+        inputPanel.add(new JScrollPane(fieldSkills));
+        inputPanel.add(labelLanguages);
+        inputPanel.add(new JScrollPane(fieldLanguages));
+        inputPanel.add(labelExperience);
+        inputPanel.add(new JScrollPane(fieldExperience));
+        inputPanel.add(labelPhoto);
+        inputPanel.add(photoButton);
+
+        frame.add(inputPanel, BorderLayout.CENTER);
+        frame.add(nextButton, BorderLayout.SOUTH);
+
+        nextButton.addActionListener(e -> {
+            name = fieldName.getText();
+            email = fieldEmail.getText();
+            phone = fieldPhone.getText();
+            address = fieldAddress.getText();
+            linkedin = fieldLinkedIn.getText();
+            summary = fieldSummary.getText();
+            education = fieldEducation.getText();
+            skills = fieldSkills.getText();
+            languages = fieldLanguages.getText();
+            experience = fieldExperience.getText();
+
+            frame.dispose();
+            showTemplates();
+        });
+
+        frame.setVisible(true);
+    }
+
+    private static void showTemplates() {
+        JFrame templateFrame = new JFrame("Choose a Resume Template");
+        templateFrame.setSize(800, 600);
+        templateFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        JPanel templatePanel = new JPanel(new GridLayout(1, 3, 10, 10));
+        templatePanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JButton template1Button = new JButton("<html><center>Template 1<br>(Professional)</center></html>");
+        JButton template2Button = new JButton("<html><center>Template 2<br>(Modern)</center></html>");
+        JButton template3Button = new JButton("<html><center>Template 3<br>(Creative)</center></html>");
+
+        templatePanel.add(template1Button);
+        templatePanel.add(template2Button);
+        templatePanel.add(template3Button);
+
+        templateFrame.add(templatePanel, BorderLayout.CENTER);
+
+        ActionListener templateListener = e -> {
+            JButton source = (JButton) e.getSource();
+            String chosenTemplate = source.getText();
+            templateFrame.dispose();
+            displayResume(chosenTemplate);
+        };
+
+        template1Button.addActionListener(templateListener);
+        template2Button.addActionListener(templateListener);
+        template3Button.addActionListener(templateListener);
+
+        templateFrame.setVisible(true);
+    }
+
+    private static void displayResume(String template) {
+        JFrame resumeFrame = new JFrame("Generated Resume - " + template);
+        resumeFrame.setSize(800, 1100);
+        resumeFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        JTextPane resumePane = new JTextPane();
+        resumePane.setEditable(false);
+
+        String htmlContent = buildResumeHTML(template);
+        resumePane.setContentType("text/html");
+        resumePane.setText(htmlContent);
+
+        JScrollPane scrollPane = new JScrollPane(resumePane);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JButton backButton = new JButton("Back");
+        JButton editButton = new JButton("Edit");
+        JButton downloadButton = new JButton("Download PDF");
+
+        backButton.addActionListener(e -> {
+            resumeFrame.dispose();
+            showTemplates();
+        });
+
+        editButton.addActionListener(e -> {
+            resumeFrame.dispose();
+            collectUserData();
+        });
+
+        downloadButton.addActionListener(e -> {
+            try {
+                saveAsPDF(template);
+                JOptionPane.showMessageDialog(resumeFrame, "PDF downloaded successfully!");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(resumeFrame, "Failed to download PDF: " + ex.getMessage());
+            }
+        });
+
+        buttonPanel.add(backButton);
+        buttonPanel.add(editButton);
+        buttonPanel.add(downloadButton);
+
+        resumeFrame.add(scrollPane, BorderLayout.CENTER);
+        resumeFrame.add(buttonPanel, BorderLayout.SOUTH);
+        resumeFrame.setVisible(true);
+    }
+
+    private static String buildResumeHTML(String template) {
+        // Build the HTML for the resume with a circular photo, name, and two-column layout
+        String html = "<html><body style='font-family: Arial, sans-serif; margin: 20px;'>";
+        html += "<div style='display: flex; align-items: center;'>";
+        html += "<img src='file:///" + photoPath + "' style='border-radius: 50%; width: 120px; height: 120px; margin-right: 20px;'>";
+        html += "<div><h1 style='margin: 0; font-size: 26px;'>" + name + "</h1></div>";
+        html += "</div>";
+        html += "<hr>";
+        html += "<div style='display: flex;'>";
+        html += "<div style='width: 45%; padding-right: 20px;'>";
+        html += "<h2>Contact Info</h2>";
+        html += "<p><strong>Email:</strong> " + email + "<br><strong>Phone:</strong> " + phone + "<br><strong>Address:</strong> " + address + "<br><strong>LinkedIn:</strong> " + linkedin + "</p>";
+        html += "<h2>Profile Summary</h2><p>" + summary + "</p>";
+        html += "<h2>Skills</h2><ul>";
+        for (String skill : skills.split(",")) html += "<li>" + skill.trim() + "</li>";
+        html += "</ul><h2>Languages</h2><ul>";
+        for (String language : languages.split(",")) html += "<li>" + language.trim() + "</li>";
+        html += "</ul></div>";
+        html += "<div style='width: 55%;'>";
+        html += "<h2>Professional Experience</h2><p>" + experience + "</p>";
+        html += "<h2>Education</h2><p>" + education + "</p>";
+        html += "</div></div>";
+        html += "</body></html>";
+        return html;
+    }
+
+    private static void saveAsPDF(String template) throws Exception {
+        Document document = new Document(PageSize.A4);
+        PdfWriter.getInstance(document, new FileOutputStream("Resume_" + name.replace(" ", "_") + ".pdf"));
+        document.open();
+
+        // Add photo
+        if (photoPath != null) {
+            Image photo = Image.getInstance(photoPath);
+            photo.scaleToFit(120, 120);
+            photo.setAlignment(Element.ALIGN_LEFT);
+            photo.setAbsolutePosition(40, 730);
+            document.add(photo);
+        }
+
+        // Add text content
+        document.add(new Paragraph(name, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20)));
+        document.add(new Paragraph("\nContact Info"));
+        document.add(new Paragraph("Email: " + email));
+        document.add(new Paragraph("Phone: " + phone));
+        document.add(new Paragraph("Address: " + address));
+        document.add(new Paragraph("LinkedIn: " + linkedin));
+        document.add(new Paragraph("\nProfessional Summary\n" + summary));
+        document.add(new Paragraph("\nSkills\n" + skills));
+        document.add(new Paragraph("\nLanguages\n" + languages));
+        document.add(new Paragraph("\nProfessional Experience\n" + experience));
+        document.add(new Paragraph("\nEducation\n" + education));
+
+        document.close();
+    }
+}
